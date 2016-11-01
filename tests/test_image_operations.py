@@ -2,24 +2,19 @@
 
 realtimcornwell@gmail.com
 """
+import sys
 import unittest
 
-import os
-import sys
-import numpy
-from numpy.testing import assert_allclose
+from image.image_iterators import *
+from image.image_operations import *
+from util.testing_support import create_test_image
 
-from arl.image_operations import *
-from arl.testing_support import replicate_image
-from arl.parameters import crocodile_path
-
-import logging
 log = logging.getLogger("tests.TestImag")
 
 class TestImage(unittest.TestCase):
 
     def setUp(self):
-        self.m31image = replicate_image(import_image_from_fits(crocodile_path("data/models/M31.MOD")))
+        self.m31image = create_test_image()
         self.cellsize = 180.0 * 0.0001 / numpy.pi
         self.m31image.wcs.wcs.cdelt[0] = -self.cellsize
         self.m31image.wcs.wcs.cdelt[1] = +self.cellsize
@@ -29,8 +24,9 @@ class TestImage(unittest.TestCase):
     def test_create_image_from_array(self):
     
         m31model_by_array = create_image_from_array(self.m31image.data, self.m31image.wcs)
+        # noinspection PyBroadException
         try:
-            m31modelsum = add_image(self.m31image, m31model_by_array, checkwcs=True)
+            m31modelsum = add_image(self.m31image, m31model_by_array)
         except:
             log.debug("Image: correctly failed on checkwcs=True")
             pass
@@ -38,6 +34,12 @@ class TestImage(unittest.TestCase):
         log.debug(self.m31image.data.shape)
         log.debug(self.m31image.wcs)
         log.debug(export_image_to_fits(self.m31image, fitsfile='temp.fits'))
+
+    def test_rasterise(self):
+    
+        m31model=create_test_image()
+        for patch in raster_iter(m31model, nraster=2):
+            pass
 
     def test_reproject(self):
         # Reproject an image

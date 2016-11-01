@@ -3,24 +3,19 @@
 realtimcornwell@gmail.com
 """
 
-
 import unittest
 
 import numpy
-from numpy.testing import assert_allclose
-
-from arl.skymodel_operations import SkyComponent, create_skycomponent
-from arl.testing_support import create_named_configuration, create_test_image
-from arl.skymodel_operations import create_skymodel_from_image, add_component_to_skymodel
-from arl.visibility_operations import Visibility, create_visibility, create_gaintable_from_array
-from arl.image_deconvolution import msclean
-from arl.fourier_transforms import predict_visibility
-
-from astropy.coordinates import SkyCoord
 from astropy import units as u
+from astropy.coordinates import SkyCoord
 
 from arl.pipelines import *
-
+from arl.image.image_deconvolution import _msclean
+from arl.skymodel.skymodel_operations import create_skycomponent
+from arl.skymodel.skymodel_operations import create_skymodel_from_image, add_component_to_skymodel
+from arl.util.testing_support import create_named_configuration, create_test_image
+from arl.visibility.visibility_operations import create_visibility
+from arl.fourier_transforms.ftprocessor import *
 
 class TestPipelines(unittest.TestCase):
 
@@ -45,7 +40,7 @@ class TestPipelines(unittest.TestCase):
         self.compreldirection = self.compabsdirection.transform_to(pcof)
 
         self.m31comp = create_skycomponent(flux=self.flux, frequency=frequency, direction=self.compreldirection)
-        self.m31image = replicate_image(create_test_image(False), [1, 1, 4, 3])
+        self.m31image = create_test_image(nchan=3, npol=4)
         cellsize = 180.0 * 0.0001 / numpy.pi
         self.m31image.wcs.wcs.cdelt[0] = -cellsize
         self.m31image.wcs.wcs.cdelt[1] = +cellsize
@@ -57,8 +52,8 @@ class TestPipelines(unittest.TestCase):
         self.params={'wstep': 100.0, 'npixel': 256, 'cellsize': 0.0001}
         vispred = create_visibility(vlaa, times, frequency, weight=1.0, phasecentre=self.phasecentre,
                                    params=self.params)
-        self.visibility = predict_visibility(vispred, self.m31sm, self.params)
-        self.m31image.data = 0.0 * self.m31image.data
+        self.visibility = predict_2d(vispred, self.m31image, params=self.params)
+        self.m31image.data *= 0.0
         self.m31sm = create_skymodel_from_image(self.m31image)
         self.m31sm = add_component_to_skymodel(self.m31sm, self.m31comp)
 
@@ -75,7 +70,7 @@ class TestPipelines(unittest.TestCase):
 
     def test_continuum_imaging(self):
         params = {'continuum_imaging': {'visibility': self.visibility, 'skymodel': self.m31sm, 'deconvolver':
-            msclean }}
+            _msclean}}
         ci = continuum_imaging(params)
 
 

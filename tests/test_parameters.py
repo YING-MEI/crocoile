@@ -3,12 +3,10 @@
 realtimcornwell@gmail.com
 """
 
-import unittest
-import os
-
-from arl.parameters import *
-
 import logging
+import unittest
+
+from data.parameters import *
 log = logging.getLogger("arl.test_parameters")
 
 class TestParameters(unittest.TestCase):
@@ -31,7 +29,10 @@ class TestParameters(unittest.TestCase):
         assert get_parameter(self.parameters, 'spectral_mode', 'channels') == 'channels'
         assert get_parameter(self.parameters['invert'], 'spectral_mode') == 'mfs'
         assert get_parameter(self.parameters, 'foo', 'bar') == 'bar'
-        assert get_parameter(self.parameters, 'foo') == None
+        assert get_parameter(self.parameters, 'foo') is None
+
 
 if __name__ == '__main__':
+    log.setLevel(logging.DEBUG)
+    log.addHandler(logging.StreamHandler(sys.stdout))
     unittest.main()
